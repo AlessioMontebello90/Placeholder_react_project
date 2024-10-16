@@ -1,0 +1,41 @@
+/* Stili per il componente PostsTable */
+
+/* Stile per il contenitore principale */
+.PostsTable-container {
+    padding: 20px;
+  }
+  
+  /* Stile per la tabella */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  /* Stile per le intestazioni della tabella */
+  th {
+    background-color: #f2f2f2;
+    text-align: left;
+    padding: 10px;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  /* Stile per le celle della tabella */
+  td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  /* Stile per i pulsanti */
+  button {
+    margin-right: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  /* Stile per il pulsante "Aggiungi Post" */
+  .add-post-button {
+    margin-bottom: 15px;
+    padding: 8px 15px;
+  }
+  
