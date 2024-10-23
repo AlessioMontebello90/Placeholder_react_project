@@ -10,8 +10,15 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 
-function PostsTable() {
-  const [posts, setPosts] = useState([]);
+// Definisci il tipo per un post
+interface Post {
+  id: number;
+  title: string;
+  body: string;
+}
+
+const PostsTable: React.FC = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -21,23 +28,23 @@ function PostsTable() {
       .then(data => setPosts(data));
   }, []);
 
-  const handleEdit = (post) => {
+  const handleEdit = (post: Post) => {
     // Logica per l'editing di un post
     console.log('Editing post:', post);
   };
 
-  const handleDelete = (postId) => {
+  const handleDelete = (postId: number) => {
     // Logica per eliminare un post
     console.log('Deleting post with id:', postId);
     setPosts(posts.filter(post => post.id !== postId));
   };
 
-  const handleView = (post) => {
+  const handleView = (post: Post) => {
     // Logica per la visualizzazione di un post
     console.log('Viewing post:', post);
   };
 
-  const handleSearchChange = (event) => {
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
 
@@ -112,6 +119,6 @@ function PostsTable() {
       </TableContainer>
     </Paper>
   );
-}
+};
 
 export default PostsTable;
