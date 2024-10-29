@@ -86,6 +86,7 @@ export function PostsTable() {
     if (newPostRef.current) {
       const updatedPost = { ...newPostRef.current };
       if (updatedPost.id) {
+        // Modifica esistente
         fetch(`https://jsonplaceholder.typicode.com/posts/${updatedPost.id}`, {
           method: 'PUT',
           body: JSON.stringify(updatedPost),
@@ -98,16 +99,18 @@ export function PostsTable() {
             setPosts(prevPosts => prevPosts.map(post => (post.id === data.id ? data : post)));
           });
       } else {
+        // Creazione nuovo post con ID progressivo
+        const newId = posts.length > 0 ? Math.max(...posts.map(post => post.id)) + 1 : 1;
         fetch('https://jsonplaceholder.typicode.com/posts', {
           method: 'POST',
-          body: JSON.stringify(updatedPost),
+          body: JSON.stringify({ ...updatedPost, id: newId }),
           headers: {
             'Content-type': 'application/json; charset=UTF-8',
           },
         })
           .then(response => response.json())
           .then((data: Post) => {
-            setPosts(prevPosts => [...prevPosts, { ...data, id: posts.length + 1 }]);
+            setPosts(prevPosts => [...prevPosts, { ...data, id: newId }]);
           });
       }
     }
