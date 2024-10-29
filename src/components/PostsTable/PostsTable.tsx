@@ -71,7 +71,7 @@ const PostsTable: React.FC = () => {
     setSearchQuery(event.target.value);
   };
 
-  // Gestisce il click per creare un nuovo post
+  // Gestisce  nuovo post
   const handleCreateClick = () => {
     setIsEditing(false);
     setNewPost({ id: 0, title: '', body: '', tags: [], views: Math.floor(Math.random() * 1000) });
@@ -131,7 +131,7 @@ const PostsTable: React.FC = () => {
     }
     handleFormClose();
   };
-
+  
   // Filtra i post in base alla query di ricerca
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchQuery.toLowerCase())
