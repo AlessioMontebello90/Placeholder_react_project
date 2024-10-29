@@ -3,7 +3,7 @@ import PostsTable from './components/PostsTable/PostsTable';
 import './App.css';
 import { AppBar, Toolbar, Typography, Container } from '@mui/material';
 
-function App() {
+const App: React.FC = () => {
   return (
     <div className="App">
       {/* Barra di navigazione */}
@@ -14,7 +14,7 @@ function App() {
           </Typography>
         </Toolbar>
       </AppBar>
-      
+
       <Container>
         <PostsTable />
       </Container>
