@@ -1,9 +1,7 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import { Paper, Toolbar, TextField, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Chip, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Typography } from '@mui/material';
+import React, { useEffect, useRef, useState, ChangeEvent } from 'react';
+import { Paper, Toolbar, TextField, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Chip, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import './PostsTable.css';
 
@@ -16,160 +14,134 @@ interface Post {
   views: number;
 }
 
-const PostsTable: React.FC = () => {
-  // Stato per i post
+export function PostsTable() {
   const [posts, setPosts] = useState<Post[]>([]);
-  // Stato per la query di ricerca
-  const [searchQuery, setSearchQuery] = useState('');
-  // Stato per aprire/chiudere il form di creazione/modifica
-  const [openForm, setOpenForm] = useState(false);
-  // Stato per aprire/chiudere l'anteprima del post
-  const [openPreview, setOpenPreview] = useState(false);
-  // Stato per determinare se stiamo modificando un post esistente
-  const [isEditing, setIsEditing] = useState(false);
-  // Stato per l'ID del post corrente in modifica
-  const [currentPostId, setCurrentPostId] = useState<number | null>(null);
-  // Stato per il nuovo post o il post in modifica
-  const [newPost, setNewPost] = useState<Post>({ id: 0, title: '', body: '', tags: [], views: 0 });
-  // Stato per il post in anteprima
-  const [previewPost, setPreviewPost] = useState<Post | null>(null);
-  // Stato per l'input del tag
-  const [tagInput, setTagInput] = useState('');
+  const [isDialogOpen, setDialogOpen] = useState(false);
+  const newPostRef = useRef<Post | null>(null);
+  const tagInputRef = useRef<string>('');
 
-  // Effetto per caricare i post all'inizio (simulazione di una chiamata API)
+  // Effetto per caricare i post all'avvio del componente (simulazione di una chiamata API)
   useEffect(() => {
     fetch('https://jsonplaceholder.typicode.com/posts?_limit=10')
       .then(response => response.json())
-      .then(data => setPosts(data.map((post: any) => ({
-        ...post,
-        tags: [],
-        views: Math.floor(Math.random() * 1000),
-      }))));
+      .then(data =>
+        setPosts(data.map((post: any) => ({
+          ...post,
+          tags: [],
+          views: Math.floor(Math.random() * 1000),
+        })))
+      );
   }, []);
 
-  // Gestisce la modifica di un post
+  // Funzione per gestire la modifica di un post
   const handleEdit = (post: Post) => {
-    setIsEditing(true);
-    setCurrentPostId(post.id);
-    setNewPost(post);
-    setOpenForm(true);
+    newPostRef.current = { ...post };
+    setDialogOpen(true);
   };
 
-  // Gestisce l'eliminazione di un post
+  // Funzione per gestire l'eliminazione di un post
   const handleDelete = (postId: number) => {
-    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+    fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`, {
+      method: 'DELETE',
+    }).then(() => {
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+    });
   };
 
-  // Gestisce la visualizzazione dell'anteprima di un post
-  const handleView = (post: Post) => {
-    setPreviewPost(post);
-    setOpenPreview(true);
-  };
-
-  // Gestisce il cambiamento dell'input di ricerca
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-  };
-
-  // Gestisce  nuovo post
-  const handleCreateClick = () => {
-    setIsEditing(false);
-    setNewPost({ id: 0, title: '', body: '', tags: [], views: Math.floor(Math.random() * 1000) });
-    setOpenForm(true);
-  };
-
-  // Chiude il form di creazione/modifica
-  const handleFormClose = () => {
-    setOpenForm(false);
-    setNewPost({ id: 0, title: '', body: '', tags: [], views: 0 });
-    setTagInput('');
-  };
-
-  // Chiude l'anteprima del post
-  const handlePreviewClose = () => {
-    setOpenPreview(false);
-    setPreviewPost(null);
-  };
-
-  // Gestisce il cambiamento degli input del form di creazione/modifica
+  // Funzione per gestire il cambiamento degli input del form di creazione/modifica
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setNewPost(prevState => ({ ...prevState, [name]: value }));
+    if (newPostRef.current) {
+      const fieldName = event.target.name as keyof Post;
+      const value = event.target.value;
+
+      // Controlla il tipo della proprietà in `newPostRef.current`
+      if (typeof newPostRef.current[fieldName] === 'string') {
+        (newPostRef.current[fieldName] as string) = value;
+      }
+    }
   };
 
-  // Gestisce il cambiamento dell'input per i tag
+  // Funzione per gestire il cambiamento dell'input per i tag
   const handleTagInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setTagInput(event.target.value);
+    tagInputRef.current = event.target.value;
   };
 
-  // Aggiunge un tag al post
+  // Funzione per aggiungere un nuovo tag al post
   const handleAddTag = () => {
-    if (tagInput.trim()) {
-      setNewPost(prevState => ({
-        ...prevState,
-        tags: [...prevState.tags, tagInput.trim()],
-      }));
-      setTagInput('');
+    if (tagInputRef.current.trim() && newPostRef.current) {
+      newPostRef.current.tags = [...newPostRef.current.tags, tagInputRef.current.trim()];
+      tagInputRef.current = '';
     }
   };
 
-  // Elimina un tag dal post
+  // Funzione per eliminare un tag dal post
   const handleTagDelete = (tagToDelete: string) => {
-    setNewPost(prevState => ({
-      ...prevState,
-      tags: prevState.tags.filter(tag => tag !== tagToDelete),
-    }));
+    if (newPostRef.current) {
+      newPostRef.current.tags = newPostRef.current.tags.filter(tag => tag !== tagToDelete);
+    }
   };
 
-  // Gestisce l'invio del form di creazione/modifica
+  // Funzione per gestire l'invio del form di creazione/modifica del post
   const handleFormSubmit = () => {
-    if (isEditing && currentPostId !== null) {
-      setPosts(prevPosts => prevPosts.map(post => (post.id === currentPostId ? { ...post, ...newPost } : post)));
-    } else {
-      const newId = posts.length ? Math.max(...posts.map(post => post.id)) + 1 : 1;
-      setPosts(prevPosts => [...prevPosts, { ...newPost, id: newId }]);
+    if (newPostRef.current) {
+      const updatedPost = { ...newPostRef.current };
+      if (updatedPost.id) {
+        fetch(`https://jsonplaceholder.typicode.com/posts/${updatedPost.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updatedPost),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
+        })
+          .then(response => response.json())
+          .then((data: Post) => {
+            setPosts(prevPosts => prevPosts.map(post => (post.id === data.id ? data : post)));
+          });
+      } else {
+        fetch('https://jsonplaceholder.typicode.com/posts', {
+          method: 'POST',
+          body: JSON.stringify(updatedPost),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
+        })
+          .then(response => response.json())
+          .then((data: Post) => {
+            setPosts(prevPosts => [...prevPosts, { ...data, id: posts.length + 1 }]);
+          });
+      }
     }
-    handleFormClose();
+    newPostRef.current = null;
+    tagInputRef.current = '';
+    setDialogOpen(false);
   };
-  
-  // Filtra i post in base alla query di ricerca
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <Paper className="PostsTable-container" sx={{ margin: '20px', padding: '20px' }}>
       <Toolbar>
-        <TextField
-          variant="outlined"
-          label="Search"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          sx={{ flex: 1, marginRight: '10px' }}
-        />
-        <IconButton color="primary">
-          <FilterListIcon />
-        </IconButton>
         <Button
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
           sx={{ marginLeft: '10px' }}
-          onClick={handleCreateClick}
+          onClick={() => {
+            newPostRef.current = { id: 0, title: '', body: '', tags: [], views: Math.floor(Math.random() * 1000) };
+            setDialogOpen(true);
+          }}
         >
           Create
         </Button>
       </Toolbar>
 
-      <Dialog open={openForm} onClose={handleFormClose} fullWidth>
-        <DialogTitle>{isEditing ? 'Edit Post' : 'Create New Post'}</DialogTitle>
+      <Dialog open={isDialogOpen} onClose={() => setDialogOpen(false)} fullWidth>
+        <DialogTitle>{newPostRef.current?.id ? 'Edit Post' : 'Create New Post'}</DialogTitle>
         <DialogContent>
           <TextField
             margin="dense"
             label="Title"
             name="title"
             fullWidth
-            value={newPost.title}
+            defaultValue={newPostRef.current?.title || ''}
             onChange={handleInputChange}
           />
           <TextField
@@ -177,65 +149,27 @@ const PostsTable: React.FC = () => {
             label="Body"
             name="body"
             fullWidth
-            value={newPost.body}
+            defaultValue={newPostRef.current?.body || ''}
             onChange={handleInputChange}
           />
           <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
-            <TextField
-              margin="dense"
-              label="Add Tag"
-              value={tagInput}
-              onChange={handleTagInputChange}
-            />
+            <TextField margin="dense" label="Add Tag" defaultValue={tagInputRef.current} onChange={handleTagInputChange} />
             <Button onClick={handleAddTag} variant="contained" color="primary">
               Add Tag
             </Button>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
-            {newPost.tags.map((tag, index) => (
-              <Chip
-                key={index}
-                label={tag}
-                onDelete={() => handleTagDelete(tag)}
-              />
+            {newPostRef.current?.tags.map((tag, index) => (
+              <Chip key={index} label={tag} onDelete={() => handleTagDelete(tag)} />
             ))}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleFormClose} color="secondary">
+          <Button onClick={() => setDialogOpen(false)} color="secondary">
             Cancel
           </Button>
           <Button onClick={handleFormSubmit} color="primary">
             Submit
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openPreview} onClose={handlePreviewClose} fullWidth>
-        <DialogTitle>Post Preview</DialogTitle>
-        <DialogContent>
-          {previewPost && (
-            <>
-              <Typography variant="h6" gutterBottom>
-                {previewPost.title}
-              </Typography>
-              <Typography variant="body1" paragraph>
-                {previewPost.body}
-              </Typography>
-              <Typography variant="caption" display="block" gutterBottom>
-                Views: {previewPost.views}
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
-                {previewPost.tags.map((tag, index) => (
-                  <Chip key={index} label={tag} />
-                ))}
-              </Stack>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handlePreviewClose} color="primary">
-            Close
           </Button>
         </DialogActions>
       </Dialog>
@@ -246,20 +180,16 @@ const PostsTable: React.FC = () => {
             <TableRow>
               <TableCell>Id</TableCell>
               <TableCell>Title</TableCell>
-              <TableCell>Published At</TableCell>
-              <TableCell>Com.</TableCell>
               <TableCell>Views</TableCell>
               <TableCell>Tags</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredPosts.map((post) => (
+            {posts.map(post => (
               <TableRow key={post.id} className="PostsTable-row">
                 <TableCell>{post.id}</TableCell>
                 <TableCell>{post.title}</TableCell>
-                <TableCell>{new Date().toLocaleDateString()}</TableCell>
-                <TableCell>{Math.random() > 0.5 ? '✓' : '✕'}</TableCell>
                 <TableCell>{post.views}</TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={1}>
@@ -275,9 +205,6 @@ const PostsTable: React.FC = () => {
                   <IconButton color="secondary" onClick={() => handleDelete(post.id)}>
                     <DeleteIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleView(post)}>
-                    <VisibilityIcon />
-                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -286,6 +213,6 @@ const PostsTable: React.FC = () => {
       </TableContainer>
     </Paper>
   );
-};
+}
 
 export default PostsTable;
