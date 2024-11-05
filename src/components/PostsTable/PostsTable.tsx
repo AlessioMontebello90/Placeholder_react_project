@@ -1,104 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Typography, Toolbar, TextField, Button, Stack, Chip
-} from '@mui/material';
+import React, { useEffect, useRef, useState, ChangeEvent } from 'react';
+import { Paper, Toolbar, TextField, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Chip, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import './PostsTable.css';
 
-// Definisci il tipo per un post
+// Definizione dell'interfaccia per il tipo di dato Post
 interface Post {
   id: number;
   title: string;
   body: string;
+  tags: string[];
+  views: number;
 }
 
-const PostsTable: React.FC = () => {
+export function PostsTable() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isDialogOpen, setDialogOpen] = useState(false);
+  const newPostRef = useRef<Post | null>(null);
+  const tagInputRef = useRef<string>('');
 
+  // Effetto per caricare i post all'avvio del componente (simulazione di una chiamata API)
   useEffect(() => {
-    // Simulazione della chiamata API per ottenere i dati dei post
     fetch('https://jsonplaceholder.typicode.com/posts?_limit=10')
       .then(response => response.json())
-      .then(data => setPosts(data));
+      .then(data =>
+        setPosts(data.map((post: any) => ({
+          ...post,
+          tags: [],
+          views: Math.floor(Math.random() * 1000),
+        })))
+      );
   }, []);
 
+  // Funzione per gestire la modifica di un post
   const handleEdit = (post: Post) => {
-    // Logica per l'editing di un post
-    console.log('Editing post:', post);
+    newPostRef.current = { ...post };
+    setDialogOpen(true);
   };
 
+  // Funzione per gestire l'eliminazione di un post
   const handleDelete = (postId: number) => {
-    // Logica per eliminare un post
-    console.log('Deleting post with id:', postId);
-    setPosts(posts.filter(post => post.id !== postId));
+    fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`, {
+      method: 'DELETE',
+    }).then(() => {
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+    });
   };
 
-  const handleView = (post: Post) => {
-    // Logica per la visualizzazione di un post
-    console.log('Viewing post:', post);
+  // Funzione per gestire il cambiamento degli input del form di creazione/modifica
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (newPostRef.current) {
+      const fieldName = event.target.name as keyof Post;
+      const value = event.target.value;
+
+      // Controlla il tipo della proprietà in `newPostRef.current`
+      if (typeof newPostRef.current[fieldName] === 'string') {
+        (newPostRef.current[fieldName] as string) = value;
+      }
+    }
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+  // Funzione per gestire il cambiamento dell'input per i tag
+  const handleTagInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    tagInputRef.current = event.target.value;
   };
 
-  // Filtro per la ricerca
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Funzione per aggiungere un nuovo tag al post
+  const handleAddTag = () => {
+    if (tagInputRef.current.trim() && newPostRef.current) {
+      newPostRef.current.tags = [...newPostRef.current.tags, tagInputRef.current.trim()];
+      tagInputRef.current = '';
+    }
+  };
+
+  // Funzione per eliminare un tag dal post
+  const handleTagDelete = (tagToDelete: string) => {
+    if (newPostRef.current) {
+      newPostRef.current.tags = newPostRef.current.tags.filter(tag => tag !== tagToDelete);
+    }
+  };
+
+  // Funzione per gestire l'invio del form di creazione/modifica del post
+  const handleFormSubmit = () => {
+    if (newPostRef.current) {
+      const updatedPost = { ...newPostRef.current };
+      if (updatedPost.id) {
+        fetch(`https://jsonplaceholder.typicode.com/posts/${updatedPost.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updatedPost),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
+        })
+          .then(response => response.json())
+          .then((data: Post) => {
+            setPosts(prevPosts => prevPosts.map(post => (post.id === data.id ? data : post)));
+          });
+      } else {
+        fetch('https://jsonplaceholder.typicode.com/posts', {
+          method: 'POST',
+          body: JSON.stringify(updatedPost),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
+        })
+          .then(response => response.json())
+          .then((data: Post) => {
+            setPosts(prevPosts => [...prevPosts, { ...data, id: posts.length + 1 }]);
+          });
+      }
+    }
+    newPostRef.current = null;
+    tagInputRef.current = '';
+    setDialogOpen(false);
+  };
 
   return (
-    <Paper sx={{ margin: '20px', padding: '20px' }}>
+    <Paper className="PostsTable-container" sx={{ margin: '20px', padding: '20px' }}>
       <Toolbar>
-        <TextField
-          variant="outlined"
-          label="Search"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          sx={{ flex: 1, marginRight: '10px' }}
-        />
-        <IconButton color="primary">
-          <FilterListIcon />
-        </IconButton>
-        <Button variant="contained" color="primary" startIcon={<AddIcon />} sx={{ marginLeft: '10px' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          sx={{ marginLeft: '10px' }}
+          onClick={() => {
+            newPostRef.current = { id: 0, title: '', body: '', tags: [], views: Math.floor(Math.random() * 1000) };
+            setDialogOpen(true);
+          }}
+        >
           Create
-        </Button>
-        <Button variant="outlined" color="primary" startIcon={<SaveAltIcon />} sx={{ marginLeft: '10px' }}>
-          Export
         </Button>
       </Toolbar>
 
-      <TableContainer component={Paper}>
+      <Dialog open={isDialogOpen} onClose={() => setDialogOpen(false)} fullWidth>
+        <DialogTitle>{newPostRef.current?.id ? 'Edit Post' : 'Create New Post'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            label="Title"
+            name="title"
+            fullWidth
+            defaultValue={newPostRef.current?.title || ''}
+            onChange={handleInputChange}
+          />
+          <TextField
+            margin="dense"
+            label="Body"
+            name="body"
+            fullWidth
+            defaultValue={newPostRef.current?.body || ''}
+            onChange={handleInputChange}
+          />
+          <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
+            <TextField margin="dense" label="Add Tag" defaultValue={tagInputRef.current} onChange={handleTagInputChange} />
+            <Button onClick={handleAddTag} variant="contained" color="primary">
+              Add Tag
+            </Button>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
+            {newPostRef.current?.tags.map((tag, index) => (
+              <Chip key={index} label={tag} onDelete={() => handleTagDelete(tag)} />
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleFormSubmit} color="primary">
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <TableContainer component={Paper} className="PostsTable-tableContainer">
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Id</TableCell>
               <TableCell>Title</TableCell>
-              <TableCell>Published At</TableCell>
-              <TableCell>Com.</TableCell>
               <TableCell>Views</TableCell>
               <TableCell>Tags</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredPosts.map((post) => (
-              <TableRow key={post.id}>
+            {posts.map(post => (
+              <TableRow key={post.id} className="PostsTable-row">
                 <TableCell>{post.id}</TableCell>
                 <TableCell>{post.title}</TableCell>
-                <TableCell>{new Date().toLocaleDateString()}</TableCell>
-                <TableCell>{Math.random() > 0.5 ? '✓' : '✕'}</TableCell>
-                <TableCell>{Math.floor(Math.random() * 1000)}</TableCell>
+                <TableCell>{post.views}</TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={1}>
-                    <Chip label="Code" />
-                    <Chip label="Music" />
+                    {post.tags.map((tag, index) => (
+                      <Chip key={index} label={tag} />
+                    ))}
                   </Stack>
                 </TableCell>
                 <TableCell align="right">
@@ -108,9 +205,6 @@ const PostsTable: React.FC = () => {
                   <IconButton color="secondary" onClick={() => handleDelete(post.id)}>
                     <DeleteIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleView(post)}>
-                    <VisibilityIcon />
-                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -119,6 +213,6 @@ const PostsTable: React.FC = () => {
       </TableContainer>
     </Paper>
   );
-};
+}
 
 export default PostsTable;
