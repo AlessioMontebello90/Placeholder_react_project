@@ -14,8 +14,11 @@ interface Post {
   views: number;
 }
 
+<<<<<<< HEAD
 // TUTTE LE CHIMATE DI SERVIZIO DEVONO ESSERE GESTITE SCRIVI UN FILE POST SERVICE CON TUTTE LE CHIAMATE - DEVE PRENDERE TUTTO IL FETCH
 
+=======
+>>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
 export function PostsTable() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -51,7 +54,10 @@ export function PostsTable() {
   };
 
   // Funzione per gestire il cambiamento degli input del form di creazione/modifica
+<<<<<<< HEAD
   // DEVE FUNNZIONARE LO STESSO ASKEYOFF
+=======
+>>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (newPostRef.current) {
       const fieldName = event.target.name as keyof Post;
@@ -64,8 +70,11 @@ export function PostsTable() {
     }
   };
 
+<<<<<<< HEAD
   // ----------------------------------------------------------------------------------
 
+=======
+>>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
   // Funzione per gestire il cambiamento dell'input per i tag
   const handleTagInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     tagInputRef.current = event.target.value;
@@ -87,9 +96,12 @@ export function PostsTable() {
   };
 
   // Funzione per gestire l'invio del form di creazione/modifica del post
+<<<<<<< HEAD
 
   // DA OTTIMIZZARE
 
+=======
+>>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
   const handleFormSubmit = () => {
     if (newPostRef.current) {
       const updatedPost = { ...newPostRef.current };
@@ -124,8 +136,11 @@ export function PostsTable() {
     setDialogOpen(false);
   };
 
+<<<<<<< HEAD
   // -------------------------------------------------
 
+=======
+>>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
   return (
     <Paper className="PostsTable-container" sx={{ margin: '20px', padding: '20px' }}>
       <Toolbar>
