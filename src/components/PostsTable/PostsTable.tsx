@@ -1,204 +1,133 @@
+// Importazione di React e dei componenti MUI per costruire l'interfaccia utente
 import React, { useEffect, useRef, useState, ChangeEvent } from 'react';
 import { Paper, Toolbar, TextField, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Chip, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import './PostsTable.css';
+import './PostsTable.css'; // Stile CSS personalizzato per la tabella dei post
+import { fetchPosts, updatePost, createPost, deletePost } from './PostService'; // Funzioni di servizio per gestire i post
+import { Post } from './PostTypes'; // Tipo definito per i post
 
-// Definizione dell'interfaccia per il tipo di dato Post
-interface Post {
-  id: number;
-  title: string;
-  body: string;
-  tags: string[];
-  views: number;
-}
-
-<<<<<<< HEAD
-// TUTTE LE CHIMATE DI SERVIZIO DEVONO ESSERE GESTITE SCRIVI UN FILE POST SERVICE CON TUTTE LE CHIAMATE - DEVE PRENDERE TUTTO IL FETCH
-
-=======
->>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
 export function PostsTable() {
+  // Stato per mantenere l'elenco dei post e la visibilità del dialogo
   const [posts, setPosts] = useState<Post[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const newPostRef = useRef<Post | null>(null);
+
+  // Uso di useRef per gestire il post attuale e l'input dei tag (senza innescare un re-render)
+  const currentPostRef = useRef<Post>({ id: 0, title: '', body: '', tags: [], views: 0 });
   const tagInputRef = useRef<string>('');
 
-  // Effetto per caricare i post all'avvio del componente (simulazione di una chiamata API)
+  // useEffect per caricare i post una volta al montaggio del componente
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts?_limit=10')
-      .then(response => response.json())
-      .then(data =>
-        setPosts(data.map((post: any) => ({
-          ...post,
-          tags: [],
-          views: Math.floor(Math.random() * 1000),
-        })))
-      );
+    fetchPosts(10).then(data =>
+      setPosts(data.map(post => ({
+        ...post,
+        tags: [], // Inizializzo i tag come array vuoto
+        views: Math.floor(Math.random() * 1000), // Assegno un numero casuale di visualizzazioni
+      })))
+    );
   }, []);
 
-  // Funzione per gestire la modifica di un post
+  // Funzione per gestire l'apertura del dialogo di modifica, impostando i dati del post corrente
   const handleEdit = (post: Post) => {
-    newPostRef.current = { ...post };
-    setDialogOpen(true);
+    currentPostRef.current = { ...post }; // Clono i dati del post per poterli modificare senza alterare l'originale
+    setDialogOpen(true); // Apro il dialogo
   };
 
-  // Funzione per gestire l'eliminazione di un post
-  const handleDelete = (postId: number) => {
-    fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`, {
-      method: 'DELETE',
-    }).then(() => {
-      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-    });
+  // Funzione per gestire l'eliminazione di un post specifico
+  const handleDelete = async (postId: number) => {
+    await deletePost(postId); // Chiamo il servizio per eliminare il post
+    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId)); // Aggiorno l'elenco dei post rimuovendo il post eliminato
   };
 
-  // Funzione per gestire il cambiamento degli input del form di creazione/modifica
-<<<<<<< HEAD
-  // DEVE FUNNZIONARE LO STESSO ASKEYOFF
-=======
->>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
+  // Gestione dell'input per i campi titolo e corpo del post
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (newPostRef.current) {
-      const fieldName = event.target.name as keyof Post;
-      const value = event.target.value;
-
-      // Controlla il tipo della proprietà in `newPostRef.current`
-      if (typeof newPostRef.current[fieldName] === 'string') {
-        (newPostRef.current[fieldName] as string) = value;
-      }
-    }
+    const { name, value } = event.target;
+    currentPostRef.current = { ...currentPostRef.current, [name]: value }; // Aggiorno solo il campo modificato
   };
 
-<<<<<<< HEAD
-  // ----------------------------------------------------------------------------------
-
-=======
->>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
-  // Funzione per gestire il cambiamento dell'input per i tag
+  // Gestione dell'input per il campo "aggiungi tag"
   const handleTagInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    tagInputRef.current = event.target.value;
+    tagInputRef.current = event.target.value; // Aggiorno il ref del tag input
   };
 
-  // Funzione per aggiungere un nuovo tag al post
+  // Aggiungo un tag al post corrente
   const handleAddTag = () => {
-    if (tagInputRef.current.trim() && newPostRef.current) {
-      newPostRef.current.tags = [...newPostRef.current.tags, tagInputRef.current.trim()];
-      tagInputRef.current = '';
+    if (tagInputRef.current.trim()) { // Verifico che l'input non sia vuoto o solo spazi
+      currentPostRef.current.tags = [...currentPostRef.current.tags, tagInputRef.current.trim()]; // Aggiungo il nuovo tag all'array
+      tagInputRef.current = ''; // Resetto il campo di input tag
+      setPosts([...posts]); // Triggero un re-render per visualizzare il tag aggiunto
     }
   };
 
-  // Funzione per eliminare un tag dal post
+  // Rimuovo un tag specifico dal post corrente
   const handleTagDelete = (tagToDelete: string) => {
-    if (newPostRef.current) {
-      newPostRef.current.tags = newPostRef.current.tags.filter(tag => tag !== tagToDelete);
-    }
+    currentPostRef.current.tags = currentPostRef.current.tags.filter(tag => tag !== tagToDelete); // Filtra l'array per rimuovere il tag selezionato
+    setPosts([...posts]); // Triggero un re-render per aggiornare la visualizzazione
   };
 
-  // Funzione per gestire l'invio del form di creazione/modifica del post
-<<<<<<< HEAD
-
-  // DA OTTIMIZZARE
-
-=======
->>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
-  const handleFormSubmit = () => {
-    if (newPostRef.current) {
-      const updatedPost = { ...newPostRef.current };
-      if (updatedPost.id) {
-        fetch(`https://jsonplaceholder.typicode.com/posts/${updatedPost.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(updatedPost),
-          headers: {
-            'Content-type': 'application/json; charset=UTF-8',
-          },
-        })
-          .then(response => response.json())
-          .then((data: Post) => {
-            setPosts(prevPosts => prevPosts.map(post => (post.id === data.id ? data : post)));
-          });
-      } else {
-        fetch('https://jsonplaceholder.typicode.com/posts', {
-          method: 'POST',
-          body: JSON.stringify(updatedPost),
-          headers: {
-            'Content-type': 'application/json; charset=UTF-8',
-          },
-        })
-          .then(response => response.json())
-          .then((data: Post) => {
-            setPosts(prevPosts => [...prevPosts, { ...data, id: posts.length + 1 }]);
-          });
-      }
+  // Gestione del submit per creare o aggiornare un post
+  const handleFormSubmit = async () => {
+    const postToSubmit = { ...currentPostRef.current };
+    if (postToSubmit.id) {
+      // Se esiste un ID, aggiorno il post
+      const updatedPost = await updatePost(postToSubmit);
+      setPosts(prevPosts => prevPosts.map(post => (post.id === updatedPost.id ? updatedPost : post))); // Aggiorno solo il post modificato nell'elenco
+    } else {
+      // Se non esiste un ID, creo un nuovo post
+      const newPost = await createPost(postToSubmit);
+      setPosts(prevPosts => [...prevPosts, { ...newPost, id: posts.length + 1 }]); // Aggiungo il nuovo post all'elenco
     }
-    newPostRef.current = null;
-    tagInputRef.current = '';
-    setDialogOpen(false);
+    currentPostRef.current = { id: 0, title: '', body: '', tags: [], views: 0 }; // Reset del post corrente
+    tagInputRef.current = ''; // Reset del campo tag
+    setDialogOpen(false); // Chiudo il dialogo
   };
 
-<<<<<<< HEAD
-  // -------------------------------------------------
-
-=======
->>>>>>> 70940b2cfbb1acb91083c865a10db7e2037448b5
   return (
     <Paper className="PostsTable-container" sx={{ margin: '20px', padding: '20px' }}>
       <Toolbar>
+        {/* Bottone per creare un nuovo post */}
         <Button
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
           sx={{ marginLeft: '10px' }}
           onClick={() => {
-            newPostRef.current = { id: 0, title: '', body: '', tags: [], views: Math.floor(Math.random() * 1000) };
-            setDialogOpen(true);
+            currentPostRef.current = { id: 0, title: '', body: '', tags: [], views: Math.floor(Math.random() * 1000) }; // Reset del post corrente
+            setDialogOpen(true); // Apro il dialogo per creare un nuovo post
           }}
         >
           Create
         </Button>
       </Toolbar>
 
+      {/* Dialogo per creare o modificare un post */}
       <Dialog open={isDialogOpen} onClose={() => setDialogOpen(false)} fullWidth>
-        <DialogTitle>{newPostRef.current?.id ? 'Edit Post' : 'Create New Post'}</DialogTitle>
+        <DialogTitle>{currentPostRef.current.id ? 'Edit Post' : 'Create New Post'}</DialogTitle>
         <DialogContent>
-          <TextField
-            margin="dense"
-            label="Title"
-            name="title"
-            fullWidth
-            defaultValue={newPostRef.current?.title || ''}
-            onChange={handleInputChange}
-          />
-          <TextField
-            margin="dense"
-            label="Body"
-            name="body"
-            fullWidth
-            defaultValue={newPostRef.current?.body || ''}
-            onChange={handleInputChange}
-          />
+          {/* Input per il titolo del post */}
+          <TextField margin="dense" label="Title" name="title" fullWidth defaultValue={currentPostRef.current.title} onChange={handleInputChange} />
+          {/* Input per il corpo del post */}
+          <TextField margin="dense" label="Body" name="body" fullWidth defaultValue={currentPostRef.current.body} onChange={handleInputChange} />
+          {/* Input per aggiungere tag */}
           <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
             <TextField margin="dense" label="Add Tag" defaultValue={tagInputRef.current} onChange={handleTagInputChange} />
-            <Button onClick={handleAddTag} variant="contained" color="primary">
-              Add Tag
-            </Button>
+            <Button onClick={handleAddTag} variant="contained" color="primary">Add Tag</Button>
           </Stack>
+          {/* Visualizzo i tag aggiunti */}
           <Stack direction="row" spacing={1} sx={{ marginTop: '10px' }}>
-            {newPostRef.current?.tags.map((tag, index) => (
+            {currentPostRef.current.tags.map((tag, index) => (
               <Chip key={index} label={tag} onDelete={() => handleTagDelete(tag)} />
             ))}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleFormSubmit} color="primary">
-            Submit
-          </Button>
+          <Button onClick={() => setDialogOpen(false)} color="secondary">Cancel</Button>
+          <Button onClick={handleFormSubmit} color="primary">Submit</Button>
         </DialogActions>
       </Dialog>
 
+      {/* Tabella per visualizzare i post */}
       <TableContainer component={Paper} className="PostsTable-tableContainer">
         <Table>
           <TableHead>
@@ -224,12 +153,8 @@ export function PostsTable() {
                   </Stack>
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton color="primary" onClick={() => handleEdit(post)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton color="secondary" onClick={() => handleDelete(post.id)}>
-                    <DeleteIcon />
-                  </IconButton>
+                  <IconButton color="primary" onClick={() => handleEdit(post)}><EditIcon /></IconButton>
+                  <IconButton color="secondary" onClick={() => handleDelete(post.id)}><DeleteIcon /></IconButton>
                 </TableCell>
               </TableRow>
             ))}
